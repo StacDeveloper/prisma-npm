@@ -1,6 +1,4 @@
-import { Prisma, PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient()
+import { PrismaClient } from "@prisma/client";
 
 export class OptimisticLockError extends Error {
     constructor(message = "Row was modified by another transaction") {
@@ -28,7 +26,7 @@ export async function optimisticLockUpdate(
         where: { id: config.id, version: config.expectedVersion },
         data: { ...config.data, version: { increment: 1 } }
     })
-    if (result.rows === 0) {
+    if (result.count === 0) {
         throw new OptimisticLockError()
     }
     return result

@@ -1,11 +1,16 @@
 import { PrismaClient } from "@prisma/client"
 import { withToolKit } from ".."
 
-const base = new PrismaClient()
+const urlLink = process.env.DIRECT_URL! as string
+if (!urlLink) throw new Error("DIRECT_URL not exist")
+
+const base = new PrismaClient({
+    datasources: { db: { url: urlLink } }
+})
 const prisma = withToolKit(base)
 
 function sleep(ms: number) {
-    return new Promise((res, rej) => setTimeout(() => res, ms))
+    return new Promise((res) => setTimeout(res, ms))
 }
 
 async function main() {
@@ -22,17 +27,21 @@ async function main() {
     const txb = (async () => {
         await sleep(200)
         log('TX B: attempting to acquire lock (should block here)');
-        return prisma.$lock.pessimistic(
-            { table: "User", id: user.id, mode: "FOR UPDATE" },
+        return prisma.$lock.pessimistic({
+            table: "User",
+            id: user.id,
+            mode: "FOR UPDATE"
+        },
             async function (tx, row) {
                 log("TX B: acquired lock (A must have released it)")
                 return row
             }
         )
     })()
-    await Promise.all([txa, txb])
+    await txa
+    await txb
     log("Both transactions complete")
 
 
 }
-main().then((res) => console.table(res)).catch((err) => console.error(err)).finally(() => base.$disconnect())
+main().then((res) => console.log(res)).catch((err) => console.error(err)).finally(() => prisma.$disconnect())
