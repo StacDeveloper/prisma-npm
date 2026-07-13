@@ -21,3 +21,8 @@ export function withToolKit(
         }
     })
 }
+
+export { buildJoinQuery } from "./joins/JoinBuilder"
+export { pessimisticLock } from "./locking/passimisticLocking"
+export { optimisticLockUpdate, OptimisticLockError } from "./locking/optimisticLocking"
+export type { JoinType } from "./joins/JoinBuilder"

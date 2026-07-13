@@ -1,28 +1,50 @@
 {
-  "name": "prisma",
+  "name": "prisma-pg-toolkit",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "prisma:migrate": "npx prisma migrate dev --name init",
-    "build": "prisma generate && tsc",
-    "start": "node dist/server.js",
-    "seed": "ts-node-dev --transpile-only prisma/seed.ts",
-    "prisma:generate": "npx prisma generate"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "description": "Joins (INNER/LEFT/RIGHT/FULL OUTER/CROSS) and locking (pessimistic/optimistic) helpers for Prisma",
   "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "dev": "tsx src/testing/test-joins.ts",
+    "prisma:migrate": "npx prisma migrate dev --name init",
+    "prisma:generate": "npx prisma generate",
+    "seed": "tsx prisma/seed.ts",
+    "build": "tsup",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "prisma",
+    "joins",
+    "locking",
+    "optimistic-locking",
+    "pessimistic-locking"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "@prisma/client": ">=5.0.0"
+  },
   "devDependencies": {
-    "@types/node": "^26.1.1",
+    "@types/node": "^22.0.0",
+    "@prisma/client": "^6.19.3",
     "prisma": "^6.19.3",
     "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.23.0",
-    "typescript": "^7.0.2"
-  },
-  "dependencies": {
-    "@prisma/client": "^6.19.3"
+    "typescript": "^5.7.0"
   }
 }
