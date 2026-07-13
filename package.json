@@ -32,6 +32,14 @@
     "optimistic-locking",
     "pessimistic-locking"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StacDeveloper/prisma-npm.git"
+  },
+  "homepage": "https://github.com/StacDeveloper/prisma-npm.git#readme",
+  "bugs": {
+    "url": "https://github.com/StacDeveloper/prisma-npm.git/issues"
+  },
   "author": "",
   "license": "MIT",
   "peerDependencies": {
