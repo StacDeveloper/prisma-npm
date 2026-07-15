@@ -14,6 +14,7 @@ async function main() {
             on: { fromColumn: "id", toColumn: "userId" }
         }
     }
+
     const result = await prisma.$join(data)
     return result
 }

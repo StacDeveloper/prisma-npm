@@ -6,10 +6,10 @@ function validateSegment(segment: string): void {
         throw new Error("Identifier segment cannot be empty")
     }
     if (segment.length > MAX_IDENTIFIER_LENGTH) {
-        throw new Error(`Identifier "${segment}" exceeds ${MAX_IDENTIFIER_LENGTH} character limit(Postgres will silently truncate it)`)
+        throw new Error(`Identifier ${segment} exceeds ${MAX_IDENTIFIER_LENGTH} character limit(Postgres will silently truncate it)`)
     }
     if (!IDENT_RE.test(segment)) {
-        throw new Error(`Unsafe or invalid identifier: "${segment}"`)
+        throw new Error(`Unsafe or invalid identifier: ${segment}`)
     }
 }
 
@@ -21,11 +21,11 @@ export function assertSafeIdentifier(name: string): string {
 export function assertSafeQualifiedIdentifier(name: string): string {
     const [core, ...rest] = name.split(/\s+as\s+/i)
     if (rest.length > 1) {
-        throw new Error(`Invalid identifier expression: "${name}"`)
+        throw new Error(`Invalid identifier expression: ${name}`)
     }
     const segment = core.trim().split(".")
     if (segment.length > 2) {
-        throw new Error(`Invalid identifier expression: "${name}"`)
+        throw new Error(`Invalid identifier expression: ${name}`)
     }
     segment.forEach(validateSegment)
 
@@ -38,3 +38,12 @@ export function assertSafeQualifiedIdentifier(name: string): string {
 export function quoteIdentifier(name: string): string {
     return `"${name}"`
 }
+
+export function quotedQualifiedIdentifier(name: string): string {
+    assertSafeQualifiedIdentifier(name)
+    const [core, alias] = name.split(/\s+as\s+/i)
+    const segment = core.trim().split(".")
+    const quotedCore = segment.map((seg) => quoteIdentifier(seg)).join(".")
+    return alias ? `${quotedCore} as ${quoteIdentifier(alias.trim())}` : quotedCore
+}
+
