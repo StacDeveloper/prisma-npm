@@ -1,9 +1,13 @@
-import { describe, it, expect, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll, beforeAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { pessimisticLock } from '../locking/passimisticLocking';
 
+
+
+const url = process.env.DATABASE_URL! as string
+if (!url) throw new Error("URL does not exist")
 const prisma = new PrismaClient({
-    datasources: { db: { url: process.env.DIRECT_URL! as string } }
+    datasources: { db: { url: url } }
 })
 
 
@@ -14,7 +18,7 @@ function sleep(ms: number) {
 }
 
 beforeEach(async () => {
-    await prisma.user.deleteMany()
+    await prisma.user?.deleteMany()
     const user = await prisma.user.create({
         data: { email: "lock-pessimistic@test.com", name: "Original" }
     })
