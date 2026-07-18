@@ -110,6 +110,32 @@ async function optimisticLockUpdate(prisma, config) {
   return result;
 }
 
+// src/unions/union.ts
+import { Prisma as Prisma3 } from "@prisma/client";
+function buildSubQuery(sub) {
+  const fromTable = assertSafeIdentifier(sub.from);
+  const selectTable = (sub.select ?? ["*"]).map((c) => c === "*" ? c : quotedQualifiedIdentifier(c)).join(", ");
+  let query = Prisma3.sql`SELECT ${Prisma3.raw(selectTable)} FROM ${Prisma3.raw(`"${fromTable}"`)}`;
+  if (sub.where) {
+    const col = assertSafeIdentifier(sub.where.column);
+    const op = sub.where.op;
+    query = Prisma3.sql`${query} WHERE ${Prisma3.raw(`"${col}"`)} ${Prisma3.raw(op)} ${sub.where.value}`;
+  }
+  return query;
+}
+function buildUnionQuery(config) {
+  if (!config.queries || config.queries.length < 2) {
+    throw new Error("Union requires atleast 2 queries");
+  }
+  const unionKeyWord = config.all ? "UNION ALL" : "UNION";
+  const subQuery = config.queries.map(buildSubQuery);
+  let result = subQuery[0];
+  for (let i = 1; i < subQuery.length; i++) {
+    result = Prisma3.sql`${result} ${Prisma3.raw(unionKeyWord)} ${subQuery[i]}`;
+  }
+  return result;
+}
+
 // src/index.ts
 function withToolKit(prisma) {
   return prisma.$extends({
@@ -122,6 +148,10 @@ function withToolKit(prisma) {
       $lock: {
         pessimistic: (config, fn) => pessimisticLock(prisma, config, fn),
         optimistic: (config) => optimisticLockUpdate(prisma, config)
+      },
+      async $union(config) {
+        const sql = buildUnionQuery(config);
+        return prisma.$queryRaw(sql);
       }
     }
   });

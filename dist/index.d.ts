@@ -42,6 +42,21 @@ interface OptimisticLockConfig {
 }
 declare function optimisticLockUpdate(prisma: PrismaClient, config: OptimisticLockConfig): Promise<any>;
 
+interface UnionSubQuery {
+    from: string;
+    select?: string[];
+    where?: {
+        column: string;
+        op: '=' | '!=' | '>' | '<' | '>=' | '<=';
+        value: any;
+    };
+}
+interface UnionConfig {
+    all?: boolean;
+    queries: UnionSubQuery[];
+}
+declare function buildUnionQuery(config: UnionConfig): Prisma.Sql;
+
 declare function withToolKit(prisma: PrismaClient): _prisma_client_runtime_library.DynamicClientExtensionThis<Prisma.TypeMap<_prisma_client_runtime_library.InternalArgs & {
     result: {};
     model: {};
@@ -52,6 +67,7 @@ declare function withToolKit(prisma: PrismaClient): _prisma_client_runtime_libra
             pessimistic: (config: Parameters<typeof pessimisticLock>[1], fn: Parameters<typeof pessimisticLock>[2]) => Promise<unknown>;
             optimistic: (config: Parameters<typeof optimisticLockUpdate>[1]) => Promise<any>;
         };
+        $union: () => (config: Parameters<typeof buildUnionQuery>[0]) => Promise<unknown>;
     };
 }, {}>, Prisma.TypeMapCb<Prisma.PrismaClientOptions>, {
     result: {};
@@ -63,6 +79,7 @@ declare function withToolKit(prisma: PrismaClient): _prisma_client_runtime_libra
             pessimistic: (config: Parameters<typeof pessimisticLock>[1], fn: Parameters<typeof pessimisticLock>[2]) => Promise<unknown>;
             optimistic: (config: Parameters<typeof optimisticLockUpdate>[1]) => Promise<any>;
         };
+        $union: () => (config: Parameters<typeof buildUnionQuery>[0]) => Promise<unknown>;
     };
 }>;
 
