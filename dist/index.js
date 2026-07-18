@@ -9,10 +9,10 @@ function validateSegment(segment) {
     throw new Error("Identifier segment cannot be empty");
   }
   if (segment.length > MAX_IDENTIFIER_LENGTH) {
-    throw new Error(`Identifier "${segment}" exceeds ${MAX_IDENTIFIER_LENGTH} character limit(Postgres will silently truncate it)`);
+    throw new Error(`Identifier ${segment} exceeds ${MAX_IDENTIFIER_LENGTH} character limit(Postgres will silently truncate it)`);
   }
   if (!IDENT_RE.test(segment)) {
-    throw new Error(`Unsafe or invalid identifier: "${segment}"`);
+    throw new Error(`Unsafe or invalid identifier: ${segment}`);
   }
 }
 function assertSafeIdentifier(name) {
@@ -22,11 +22,11 @@ function assertSafeIdentifier(name) {
 function assertSafeQualifiedIdentifier(name) {
   const [core, ...rest] = name.split(/\s+as\s+/i);
   if (rest.length > 1) {
-    throw new Error(`Invalid identifier expression: "${name}"`);
+    throw new Error(`Invalid identifier expression: ${name}`);
   }
   const segment = core.trim().split(".");
   if (segment.length > 2) {
-    throw new Error(`Invalid identifier expression: "${name}"`);
+    throw new Error(`Invalid identifier expression: ${name}`);
   }
   segment.forEach(validateSegment);
   if (rest.length === 1) {
@@ -37,28 +37,35 @@ function assertSafeQualifiedIdentifier(name) {
 function quoteIdentifier(name) {
   return `"${name}"`;
 }
+function quotedQualifiedIdentifier(name) {
+  assertSafeQualifiedIdentifier(name);
+  const [core, alias] = name.split(/\s+as\s+/i);
+  const segment = core.trim().split(".");
+  const quotedCore = segment.map((seg) => quoteIdentifier(seg)).join(".");
+  return alias ? `${quotedCore} as ${quoteIdentifier(alias.trim())}` : quotedCore;
+}
 
 // src/joins/JoinBuilder.ts
 function buildJoinQuery(config) {
   const fromTable = assertSafeIdentifier(config.from);
-  const selectCols = (config.select ?? ["*"]).map((c) => c === "*" ? c : assertSafeQualifiedIdentifier(c)).join(", ");
-  let query = Prisma.sql`SELECT ${Prisma.raw(selectCols)} FROM ${Prisma.raw(`"${quoteIdentifier(fromTable)}"`)}`;
+  const selectCols = (config.select ?? ["*"]).map((c) => c === "*" ? c : quotedQualifiedIdentifier(c)).join(", ");
+  let query = Prisma.sql`SELECT ${Prisma.raw(selectCols)} FROM ${Prisma.raw(`${quoteIdentifier(fromTable)}`)}`;
   if (config.join) {
     const { type, table, on } = config.join;
     const joinTable = assertSafeIdentifier(table);
     if (type === "CROSS") {
-      query = Prisma.sql`${query} CROSS JOIN ${Prisma.raw(`"${quoteIdentifier(joinTable)}"`)}`;
+      query = Prisma.sql`${query} CROSS JOIN ${Prisma.raw(`${quoteIdentifier(joinTable)}`)}`;
     } else {
       if (!on) throw new Error(`on Condition is required for ${type} JOIN`);
       const fromCol = assertSafeIdentifier(on.fromColumn);
       const toCol = assertSafeIdentifier(on.toColumn);
-      query = Prisma.sql`${query} ${Prisma.raw(type)} JOIN ${Prisma.raw(`"${quoteIdentifier(joinTable)}"`)} ON ${Prisma.raw(`"${quoteIdentifier(fromTable)}"."${quoteIdentifier(fromCol)}"`)} = ${Prisma.raw(`"${quoteIdentifier(joinTable)}"."${quoteIdentifier(toCol)}"`)}`;
+      query = Prisma.sql`${query} ${Prisma.raw(type)} JOIN ${Prisma.raw(`${quoteIdentifier(joinTable)}`)} ON ${Prisma.raw(`${quoteIdentifier(fromTable)}.${quoteIdentifier(fromCol)}`)} = ${Prisma.raw(`${quoteIdentifier(joinTable)}.${quoteIdentifier(toCol)}`)}`;
     }
   }
   if (config.where) {
     const col = assertSafeIdentifier(config.where.column);
     const op = config.where.op;
-    query = Prisma.sql`${query} WHERE ${Prisma.raw(`"${quoteIdentifier(col)}"`)} ${Prisma.raw(op)} ${config.where.value}`;
+    query = Prisma.sql`${query} WHERE ${Prisma.raw(`${quoteIdentifier(col)}`)} ${Prisma.raw(op)} ${config.where.value}`;
   }
   return query;
 }
@@ -73,6 +80,7 @@ async function pessimisticLock(prisma, config, fn) {
       const rows = await tx.$queryRaw(
         Prisma2.sql`SELECT * FROM ${Prisma2.raw(`${quoteIdentifier(table)}`)} WHERE id = ${config.id} ${Prisma2.raw(mode)}`
       );
+      console.log(rows);
       if (!rows.length) throw new Error(`Row not found in ${table} with id ${config.id}`);
       return fn(tx, rows[0]);
     },

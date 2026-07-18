@@ -2,6 +2,7 @@ import { PrismaClient, Prisma } from "@prisma/client"
 import { buildJoinQuery } from "./joins/JoinBuilder"
 import { pessimisticLock } from "./locking/passimisticLocking"
 import { optimisticLockUpdate } from "./locking/optimisticLocking"
+import { buildUnionQuery } from "./unions/union"
 
 
 export function withToolKit(
@@ -17,6 +18,10 @@ export function withToolKit(
             $lock: {
                 pessimistic: (config: Parameters<typeof pessimisticLock>[1], fn: Parameters<typeof pessimisticLock>[2]) => pessimisticLock(prisma, config, fn),
                 optimistic: (config: Parameters<typeof optimisticLockUpdate>[1]) => optimisticLockUpdate(prisma, config)
+            },
+            async $union(config: Parameters<typeof buildUnionQuery>[0]) {
+                const sql = buildUnionQuery(config)
+                return prisma.$queryRaw(sql)
             }
         }
     })
