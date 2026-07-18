@@ -21,6 +21,7 @@ export async function pessimisticLock<T>(
         const rows: any[] = await tx.$queryRaw(
             Prisma.sql`SELECT * FROM ${Prisma.raw(`${quoteIdentifier(table)}`)} WHERE id = ${config.id} ${Prisma.raw(mode)}`
         )
+        console.log(rows)
         if (!rows.length) throw new Error(`Row not found in ${table} with id ${config.id}`)
         return fn(tx, rows[0])
     },
