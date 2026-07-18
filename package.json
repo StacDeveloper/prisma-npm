@@ -1,6 +1,6 @@
 {
   "name": "prisma-pg-toolkit",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Joins (INNER/LEFT/RIGHT/FULL OUTER/CROSS) and locking (pessimistic/optimistic) helpers for Prisma",
   "type": "module",
   "main": "dist/index.cjs",
